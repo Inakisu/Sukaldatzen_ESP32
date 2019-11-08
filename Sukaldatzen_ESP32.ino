@@ -528,7 +528,6 @@ void establecer_color_led(RgbColor color) {
     strip.SetPixelColor(i, color);
   }
   strip.Show();
-
 }
 //////////////////////////Pasar numero a String////////////////////////////////////
 void numero_medicion_string() {
