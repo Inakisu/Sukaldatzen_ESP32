@@ -140,6 +140,7 @@ String formattedDate;
 String dayStamp;
 String timeStamp;
 String dateTimeStamp;
+String dateTimeStampInicio;
 //////////////////////////Strings para base de datos///////////////////////////////
 char s_cazuelas[] = "Cazuelas/";
 char s_mediciones[] = "/Mediciones/Medicion";
@@ -331,15 +332,12 @@ void setup() {
       Serial.println("Ni idea");
       break;
   }
-
-
-
+  
   touchAttachInterrupt(SENSOR_CAPACITIVO, gotTouch1, threshold);
 
   //leerTemperatura();
   //Serial.println("CLEARDATA");
   Serial.println("LABEL, Tiempo encendido");
-
 }
 
 void desconectarBluetooth() {
@@ -360,9 +358,13 @@ esp_sleep_wakeup_cause_t get_wakeup_reason() {
 void loop() {
   Serial.println("-- Entramos en el bucle de lectura de temperaturas");
   obtenerNTP(); //ESTO ES PARA PROBAR
+   //PRUEBA
+  actualizarBD(1);
+  actualizarBD(2);
+//  actualizarBD(3);
   deteccionSensorCapacitivo();
   leerTemperatura();
-  actualizarBD();
+  //actualizarBD();
   t1 = millis();
   if (temp_olla >= 141) {
     temp_maxima = true;
@@ -419,8 +421,8 @@ void callback() {
 /////////////////////////////WIFI/////////////////////////////////
 
 bool conexionWIFI(boolean temporizador) {
-  WiFi.begin(variablesFlash.ssid, variablesFlash.password);
-  //WiFi.begin(WIFI_SSID,WIFI_PASSWORD); //Para pruebas
+  //WiFi.begin(variablesFlash.ssid, variablesFlash.password);
+  WiFi.begin(WIFI_SSID,WIFI_PASSWORD); //Para pruebas
   Serial.println("Conectando a red WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
@@ -578,15 +580,16 @@ void obtenerNTP() {
   formattedDate = timeClient.getFormattedDate();
   int splitT = formattedDate.indexOf("T"); //Partimos la fecha y la hora
   dayStamp = formattedDate.substring(0, splitT);
-  Serial.println(dayStamp); //obtenemos la fecha
+  //Serial.println(dayStamp); //obtenemos la fecha
   timeStamp = formattedDate.substring(splitT + 1, formattedDate.length() - 1);
-  Serial.println(timeStamp);//obtenemos la hora
+  //Serial.println(timeStamp);//obtenemos la hora
   //Ahora nos queda juntar las dos con un espacio
   dateTimeStamp = dayStamp + " " + timeStamp;
-  Serial.println("dateTimeStamp: " + dateTimeStamp);
+  Serial.println("dateTimeStamp obtenida en obtenertNTP(): " + dateTimeStamp);
 }
 /////////////////////////////////////Actualización de la base de datos///////////////////////////////
-void actualizarBD() {
+void actualizarBD(int tipo) {
+  
   Serial.println("-- Entrando en actualizarBD()");
   String authUsername = "android";
   String authPassword = "Becario2017";
@@ -597,28 +600,45 @@ void actualizarBD() {
   StaticJsonBuffer<capacity> jb;
   JsonObject& json = jb.createObject(); //JsonObject& json = buffer.createObject(); //jsonBuffer
   json["idMAC"] = WiFi.macAddress();
-  //  json["medicionFechaInicio"] = ;
-  //  json["medicionFechaFin"] = ;
-  //  json["timestamp"] = ;
-  //  json["tempsInt"] = ;
-  //  json["tempsTapa"] = ;
-  String payload = " ";
-  HTTPClient http;
-  http.begin("http://10.128.0.104:9200/mediciones_sukaldatzen/_doc");//separado por comas no compila
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Basic " + auth);
-  int httpCode = http.POST(payload); //payload es la información que deseamos enviar
-  if (httpCode > 0) { //Chequeamos qué código devuelve
-    String payloadV = http.getString();
-    Serial.println("Código HTTP: " + httpCode);
-    Serial.println("Respuesta: " + payloadV); //payloadV es la información que obtenemos
-  } else {
-    Serial.println("Error en la petición HTTP");
+  if(tipo == 1){
+    obtenerNTP();
+    dateTimeStampInicio = dateTimeStamp;
+    json["medicionFechaInicio"] = dateTimeStampInicio;
+    json["medicionFechaFin"] = '\0';
+    json["timestamp"] = dateTimeStamp;
+  }else if(tipo == 2){
+    obtenerNTP();
+    json["medicionFechaInicio"] = dateTimeStampInicio;
+    json["medicionFechaFin"] = '\0';
+    json["timestamp"] = dateTimeStamp;
+  }else if(tipo == 3){
+    obtenerNTP();
+    json["medicionFechaInicio"] = dateTimeStampInicio;
+    json["medicionFechaFin"] = dateTimeStamp;
+    json["timestamp"] = dateTimeStamp;
   }
-  http.end();
+  //json["tempsInt"] = temp_olla;
+  //json["tempsTapa"] = temp_tapa;
+  Serial.print("El JSON que hemos generado: ");
+  json.printTo(Serial);
+  Serial.println("");
+  String payload = " ";
+//  HTTPClient http;
+//  http.begin("http://10.128.0.104:9200/mediciones_sukaldatzen/_doc");//separado por comas no compila
+//  http.addHeader("Content-Type", "application/json");
+//  http.addHeader("Authorization", "Basic " + auth);
+//  int httpCode = http.POST(payload); //payload es la información que deseamos enviar
+//  if (httpCode > 0) { //Chequeamos qué código devuelve
+//    String payloadV = http.getString();
+//    Serial.println("Código HTTP: " + httpCode);
+//    Serial.println("Respuesta: " + payloadV); //payloadV es la información que obtenemos
+//  } else {
+//    Serial.println("Error en la petición HTTP");
+//  }
+//  http.end();
 
 
-  Serial.print("enviar datos: ");
+  Serial.println("enviar datos: ");
 
 
   mediciones_temp++;
