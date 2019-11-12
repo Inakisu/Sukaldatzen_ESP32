@@ -609,7 +609,7 @@ void actualizarBD(int tipo) {
     medicFFin = dateTimeStamp;
   }
   JsonObject& json = jb.createObject(); //JsonObject& json = buffer.createObject(); //jsonBuffer
-  json["idMAC"] = WiFi.macAddress();
+  json["idMac"] = WiFi.macAddress();
   json["medicionFechaInicio"] = dateTimeStampInicio;
   json["medicionFechaFin"] = medicFFin;
   json["timestamp"] = dateTimeStamp;
