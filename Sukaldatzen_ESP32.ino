@@ -593,49 +593,48 @@ void actualizarBD(int tipo) {
   Serial.println("-- Entrando en actualizarBD()");
   String authUsername = "android";
   String authPassword = "Becario2017";
+  String medicFFin = " ";
   //codificamos en base64
   String auth = base64::encode(authUsername + ":" + authPassword);
   //Creamos objeto JSON a enviar
-  const int capacity = JSON_OBJECT_SIZE(3);
+  const int capacity = JSON_OBJECT_SIZE(12);
   StaticJsonBuffer<capacity> jb;
+  obtenerNTP();
+  if(tipo == 1){
+    dateTimeStampInicio = dateTimeStamp;
+    medicFFin = (char*)0; //null
+  }else if(tipo == 2){
+    medicFFin =  (char*)0;
+  }else if(tipo == 3){
+    medicFFin = dateTimeStamp;
+  }
   JsonObject& json = jb.createObject(); //JsonObject& json = buffer.createObject(); //jsonBuffer
   json["idMAC"] = WiFi.macAddress();
-  if(tipo == 1){
-    obtenerNTP();
-    dateTimeStampInicio = dateTimeStamp;
-    json["medicionFechaInicio"] = dateTimeStampInicio;
-    json["medicionFechaFin"] = '\0';
-    json["timestamp"] = dateTimeStamp;
-  }else if(tipo == 2){
-    obtenerNTP();
-    json["medicionFechaInicio"] = dateTimeStampInicio;
-    json["medicionFechaFin"] = '\0';
-    json["timestamp"] = dateTimeStamp;
-  }else if(tipo == 3){
-    obtenerNTP();
-    json["medicionFechaInicio"] = dateTimeStampInicio;
-    json["medicionFechaFin"] = dateTimeStamp;
-    json["timestamp"] = dateTimeStamp;
-  }
-  //json["tempsInt"] = temp_olla;
-  //json["tempsTapa"] = temp_tapa;
+  json["medicionFechaInicio"] = dateTimeStampInicio;
+  json["medicionFechaFin"] = medicFFin;
+  json["timestamp"] = dateTimeStamp;
+  json["tempsInt"] = 44;//temp_olla;
+  json["tempsTapa"] = 21;//temp_tapa;
   Serial.print("El JSON que hemos generado: ");
   json.printTo(Serial);
   Serial.println("");
-  String payload = " ";
-//  HTTPClient http;
-//  http.begin("http://10.128.0.104:9200/mediciones_sukaldatzen/_doc");//separado por comas no compila
-//  http.addHeader("Content-Type", "application/json");
-//  http.addHeader("Authorization", "Basic " + auth);
-//  int httpCode = http.POST(payload); //payload es la información que deseamos enviar
-//  if (httpCode > 0) { //Chequeamos qué código devuelve
-//    String payloadV = http.getString();
-//    Serial.println("Código HTTP: " + httpCode);
-//    Serial.println("Respuesta: " + payloadV); //payloadV es la información que obtenemos
-//  } else {
-//    Serial.println("Error en la petición HTTP");
-//  }
-//  http.end();
+  String payload=" ";
+  json.printTo(payload);
+  Serial.println("========> La payload que se va a enviar: "  + payload);
+  String payloadV = " ";
+  HTTPClient http;
+  http.begin("http://10.128.0.104:9200/mediciones_sukaldatzen/_doc");//separado por comas no compila
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Basic " + auth);
+  int httpCode = http.POST(payload); //payload es la información que deseamos enviar
+  if (httpCode > 0) { //Chequeamos qué código devuelve
+    String payloadV = http.getString();
+    Serial.println("Código HTTP: " + httpCode);
+    Serial.println("Respuesta: " + payloadV); //payloadV es la información que obtenemos
+  } else {
+    Serial.println("Error en la petición HTTP");
+  }
+  http.end();
 
 
   Serial.println("enviar datos: ");
