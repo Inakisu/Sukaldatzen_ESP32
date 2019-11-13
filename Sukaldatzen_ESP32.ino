@@ -67,7 +67,7 @@ void FLASHvariables::initialize() {
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
-#define PIN_LED 17
+#define PIN_LED 35
 #define NUMPIXELS      7
 #define SENSOR_CAPACITIVO T0 //gpio4
 #define MOSFET_LED 22
