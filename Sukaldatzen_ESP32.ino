@@ -1,6 +1,6 @@
+#include <HTTPClient.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <IOXhop_FirebaseESP32.h>
 #include <NeoPixelBus.h>
 #include <SPI.h>
 #include "Adafruit_MAX31855.h"
@@ -65,9 +65,6 @@ void FLASHvariables::initialize() {
 
 //#define WIFI_SSID "EmbegaWifi_Lan"
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
-
-#define FIREBASE_HOST "sukaldatzen-85f2a.firebaseio.com" //borrar esto cuando se sustituya lo de firebase
-#define FIREBASE_AUTH ""
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
 #define PIN_LED 17
@@ -297,16 +294,13 @@ void setup() {
   }
   Serial.println("-- Se llama a desconectarBluetooth() desde void setup()");
   desconectarBluetooth();
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   sprintf(buff, "Cazuelas/%s/Estado", mac);
-  Firebase.set("Cazuelas/30:ae:a4:14:3d:d8/Estado", true);
-  Firebase.set(buff, true);
   bool med = false;
   int contador = 0;
 
   sprintf(buff, "Cazuelas/%s/Mediciones/Numero mediciones", mac);
 
-  int num_cocciones = Firebase.getInt(buff);
+  int num_cocciones = 0;
   t1 = millis();
 
   // Serial.print("Numero de cocciones:  ");
@@ -321,18 +315,17 @@ void setup() {
     case ESP_SLEEP_WAKEUP_TOUCHPAD :
       mediciones_temp = 0;
       mediciones = num_cocciones + 1;
-      Firebase.set(buff, mediciones);
       Serial.println("Wakeup caused by touchpad");
       break;
     case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
     default :
       mediciones_temp = 0;
       mediciones = num_cocciones + 1;
-      Firebase.set(buff, mediciones);
       Serial.println("Ni idea");
       break;
   }
-  
+  leerTemperatura();
+  actualizarBD(1);
   touchAttachInterrupt(SENSOR_CAPACITIVO, gotTouch1, threshold);
 
   //leerTemperatura();
@@ -359,11 +352,12 @@ void loop() {
   Serial.println("-- Entramos en el bucle de lectura de temperaturas");
   obtenerNTP(); //ESTO ES PARA PROBAR
    //PRUEBA
-  actualizarBD(1);
-  actualizarBD(2);
+  //actualizarBD(1);
+ // actualizarBD(2);
 //  actualizarBD(3);
   deteccionSensorCapacitivo();
   leerTemperatura();
+    actualizarBD(2);
   //actualizarBD();
   t1 = millis();
   if (temp_olla >= 141) {
@@ -485,7 +479,8 @@ void deteccionSensorCapacitivo() {
   }
   if (apagar) {
     sprintf(buff, "Cazuelas/%s/Estado", mac);
-    Firebase.set(buff, false);
+    leerTemperatura();
+    actualizarBD(3);
     establecer_color_led(apagado);
     Serial.println("Apagando modulo");
     touchAttachInterrupt(SENSOR_CAPACITIVO, callback, threshold);
@@ -573,7 +568,7 @@ void obtenerNTP() {
   WiFiUDP ntpUDP;
   NTPClient timeClient(ntpUDP);
   timeClient.begin();
-  timeClient.setTimeOffset(3600); //GMT +1
+  timeClient.setTimeOffset(0); //GMT +1 //quito lo de 3600
   while (!timeClient.update()) {
     timeClient.forceUpdate();
   }
@@ -582,6 +577,7 @@ void obtenerNTP() {
   dayStamp = formattedDate.substring(0, splitT);
   //Serial.println(dayStamp); //obtenemos la fecha
   timeStamp = formattedDate.substring(splitT + 1, formattedDate.length() - 1);
+  //timeStamp.remove(16);
   //Serial.println(timeStamp);//obtenemos la hora
   //Ahora nos queda juntar las dos con un espacio
   dateTimeStamp = dayStamp + " " + timeStamp;
@@ -590,7 +586,7 @@ void obtenerNTP() {
 /////////////////////////////////////Actualización de la base de datos///////////////////////////////
 void actualizarBD(int tipo) {
   
-  Serial.println("-- Entrando en actualizarBD()");
+  Serial.println("-- Entrando en actualizarBD() " + tipo);
   String authUsername = "android";
   String authPassword = "Becario2017";
   String medicFFin = " ";
@@ -603,9 +599,11 @@ void actualizarBD(int tipo) {
   if(tipo == 1){
     dateTimeStampInicio = dateTimeStamp;
     medicFFin = (char*)0; //null
-  }else if(tipo == 2){
+  }
+  if(tipo == 2){
     medicFFin =  (char*)0;
-  }else if(tipo == 3){
+  }
+  if(tipo == 3){
     medicFFin = dateTimeStamp;
   }
   JsonObject& json = jb.createObject(); //JsonObject& json = buffer.createObject(); //jsonBuffer
@@ -613,8 +611,8 @@ void actualizarBD(int tipo) {
   json["medicionFechaInicio"] = dateTimeStampInicio;
   json["medicionFechaFin"] = medicFFin;
   json["timestamp"] = dateTimeStamp;
-  json["tempsInt"] = 44;//temp_olla;
-  json["tempsTapa"] = 21;//temp_tapa;
+  json["tempsInt"] = 95;//temp_olla;
+  json["tempsTapa"] = 47;//temp_tapa;
   Serial.print("El JSON que hemos generado: ");
   json.printTo(Serial);
   Serial.println("");
@@ -635,53 +633,5 @@ void actualizarBD(int tipo) {
     Serial.println("Error en la petición HTTP");
   }
   http.end();
-
-
-  Serial.println("enviar datos: ");
-
-
   mediciones_temp++;
-
-
-
-  //    char buf1[100];
-  //    char buf2[100];
-  //    char buf3[100];
-  //    int u=1;
-  //
-  //      t1=millis();
-  //      numero_temperatura_medida();
-  //      numero_medicion_string();
-  //
-  //
-  //      char aux[4];
-  //      sprintf(aux,"%c%c%c%c",buf_numero_temperatura[0],buf_numero_temperatura[1],buf_numero_temperatura[2],buf_numero_temperatura[3]);
-  //      sprintf(buf1, "%s%s%s%s%s%s%s",s_cazuelas,mac,s_mediciones,buf_numero_medicion,s_temperatura,aux,s_temperaturaInterior);
-  //
-  //      sprintf(aux,"%c%c%c%c",buf_numero_temperatura[0],buf_numero_temperatura[1],buf_numero_temperatura[2],buf_numero_temperatura[3]);
-  //      sprintf(buf2, "%s%s%s%s%s%s%s",s_cazuelas,mac,s_mediciones,buf_numero_medicion,s_temperatura,aux,s_temperaturaTapa);
-  //
-  //
-  //      sprintf(buf3, "%s%s%s",s_cazuelas,mac,s_temperaturaActual);//Crea el String que se utiliza para añadir el valor de la temperatura en la tapa
-  //     t2=millis();
-  //     Serial.print("Preparar query: ");
-  //     Serial.println(t2-t1);
-  //     t1=millis();
-  //      Firebase.setFloat(buf3,temp_olla);//añade a la base de datos la temperatura dentro del módulo
-  //      Firebase.setFloat(buf1, temp_olla);//actualiza la temperatura actual de la olla
-  //      Firebase.setFloat(buf2, temp_tapa);//añade a la base de datos la temperatura dentro de la olla
-  //      t2=millis();
-  //      Serial.print("enviar datos: ");
-  //      Serial.println(t2-t1);
-  //      if (Firebase.failed()) {
-  //          Serial.print("setting /Temperatura failed:");
-  //          Serial.println(Firebase.error());
-  //
-  //          return;
-  //      }else{
-  //        Serial.print("Temperatura: ");
-  //        Serial.println(temp_olla);
-  //      }
-  //
-  //      mediciones_temp++;
 }
