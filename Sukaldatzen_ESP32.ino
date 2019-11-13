@@ -501,7 +501,7 @@ void deteccionSensorCapacitivo() {
 void leerTemperatura() {
   digitalWrite(MOSFET_MAX31855, HIGH);
   double t = millis();
-  while (millis() - t < 5); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
+  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
   temp_olla = thermocouple.readCelsius();
   temp_tapa = thermocouple.readInternal();
   digitalWrite(MOSFET_MAX31855, LOW);
@@ -611,8 +611,8 @@ void actualizarBD(int tipo) {
   json["medicionFechaInicio"] = dateTimeStampInicio;
   json["medicionFechaFin"] = medicFFin;
   json["timestamp"] = dateTimeStamp;
-  json["tempsInt"] = 95;//temp_olla;
-  json["tempsTapa"] = 47;//temp_tapa;
+  json["tempsInt"] = temp_olla;//temp_olla;
+  json["tempsTapa"] = temp_tapa;//temp_tapa;
   Serial.print("El JSON que hemos generado: ");
   json.printTo(Serial);
   Serial.println("");
