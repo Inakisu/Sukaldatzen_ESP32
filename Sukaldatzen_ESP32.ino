@@ -67,15 +67,15 @@ void FLASHvariables::initialize() {
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
-#define PIN_LED 35
-#define NUMPIXELS      7
-#define SENSOR_CAPACITIVO T0 //gpio4
+#define PIN_LED 35              // adafruit 17
+#define NUMPIXELS      6        //adafruit 7
+#define SENSOR_CAPACITIVO T0    //gpio4
 #define MOSFET_LED 22
 
-//Pines paara la comunicacion SPI con el MAX31855
-#define MAXDO   33
-#define MAXCS   15
-#define MAXCLK  32
+//Pines paara la comunicacion SPI con el MAX31855  //ADAFRUIT
+#define MAXDO   32                                  //33
+#define MAXCS   25                                  //15
+#define MAXCLK  33                                  //32
 #define MOSFET_MAX31855  26
 
 ////////////////////////Variables LED//////////////////////////////
