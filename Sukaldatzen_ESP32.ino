@@ -79,11 +79,11 @@ void FLASHvariables::initialize() {
 #define MOSFET_MAX31855  26
 
 ////////////////////////Variables LED//////////////////////////////
-#define AZUL 0x0000F0
+/*#define AZUL 0x0000F0
 #define VERDE 0x00FF00
 #define NARANJA 0xFF8C00
 #define ROJO 0xFF0000
-#define APAGADO 0x000000
+#define APAGADO 0x000000*/
 #define SATURACION_COLOR 255
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, PIN_LED);
@@ -112,7 +112,7 @@ esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info
 /////////////////////Variables//////////////////////////////
 
 uint32_t prevTime;
-int threshold = 57;
+int threshold = 10; //cambiar según valor de sensor capacitivo
 int ledbuilt = 13;
 bool touch1detected = false;
 int contador_conexion_wifi = 0;
@@ -123,8 +123,8 @@ char mac[17];
 char mac2[17];
 float i = 0;
 float temp_termopar;
-float temp_olla = 23.25;
-float temp_tapa = 0;
+float temp_olla = 23.25; //tª del termopar
+float temp_tapa = 0;      // tª del max
 float temp_anterior = 0;
 bool subir_temperatura = true;
 bool temp_maxima = false;
@@ -490,8 +490,8 @@ void leerTemperatura() {
   digitalWrite(MOSFET_MAX31855, HIGH);
   double t = millis();
   while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
-  temp_olla = thermocouple.readCelsius();
-  temp_tapa = thermocouple.readInternal();
+  temp_olla = thermocouple.readCelsius(); //termopar
+  temp_tapa = thermocouple.readInternal(); //interna del ic max
   digitalWrite(MOSFET_MAX31855, LOW);
 }
 
@@ -596,8 +596,8 @@ void actualizarBD(int tipo) {
   json["medicionFechaInicio"] = dateTimeStampInicio;
   json["medicionFechaFin"] = medicFFin;
   json["timestamp"] = dateTimeStamp;
-  json["tempsInt"] = temp_olla;//temp_olla;
-  json["tempsTapa"] = temp_tapa;//temp_tapa;
+  json["Tª_OLLA"] = temp_olla;//temp_olla;
+  json["Tª_Interna_MAX31855"] = temp_tapa;//temp_tapa;
   Serial.print("El JSON que hemos generado: ");
   json.printTo(Serial);
   Serial.println("");
