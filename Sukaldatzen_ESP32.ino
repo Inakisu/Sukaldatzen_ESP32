@@ -139,12 +139,6 @@ String timeStamp;
 String dateTimeStamp;
 String dateTimeStampInicio;
 //////////////////////////Strings para base de datos///////////////////////////////
-char s_cazuelas[] = "Cazuelas/";
-char s_mediciones[] = "/Mediciones/Medicion";
-char s_temperatura[] = "/Temperatura";
-char s_temperaturaInterior[] = "/Temperatura interior";
-char s_temperaturaTapa[] = "/Temperatura tapa";
-char s_temperaturaActual[] = "/Temperatura";
 char buff[100];
 int varCor = 401;
 
