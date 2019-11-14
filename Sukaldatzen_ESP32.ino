@@ -597,8 +597,8 @@ void actualizarBD(int tipo) {
   json["medicionFechaInicio"] = dateTimeStampInicio;
   json["medicionFechaFin"] = medicFFin;
   json["timestamp"] = dateTimeStamp;
-  json["Tª_OLLA"] = temp_olla;//temp_olla;
-  json["Tª_Interna_MAX31855"] = temp_tapa;//temp_tapa;
+  json["tempsInt"] = temp_olla;//temp_olla;
+  json["tempsTapa"] = temp_tapa;//temp_tapa;
   Serial.print("El JSON que hemos generado: ");
   json.printTo(Serial);
   Serial.println("");
