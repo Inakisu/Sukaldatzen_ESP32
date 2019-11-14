@@ -84,7 +84,7 @@ void FLASHvariables::initialize() {
 #define NARANJA 0xFF8C00
 #define ROJO 0xFF0000
 #define APAGADO 0x000000
-#define SATURACION_COLOR 10
+#define SATURACION_COLOR 255
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, PIN_LED);
 RgbColor rojo(SATURACION_COLOR, 0, 0);
@@ -265,7 +265,7 @@ long t1 = 0, t2 = 0;
 
 void setup() {
   // put your setup code here, to run once:
-  //touchAttachInterrupt(SENSOR_CAPACITIVO, gotTouch1, threshold);
+  //touchAttachInterrupt(SENSOR_CAPACITIVO, gotTouch1, threshold);// estaba comentado
   pinMode (ledbuilt, OUTPUT);
   t1 = millis();
   esp_chip_info(&chip_info);
