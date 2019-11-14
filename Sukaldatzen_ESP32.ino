@@ -67,7 +67,7 @@ void FLASHvariables::initialize() {
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
-#define PIN_LED 35              // adafruit 17
+#define PIN_LED 17              // adafruit 17
 #define NUMPIXELS      6        //adafruit 7
 #define SENSOR_CAPACITIVO T0    //gpio4
 #define MOSFET_LED 22
@@ -112,7 +112,8 @@ esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info
 /////////////////////Variables//////////////////////////////
 
 uint32_t prevTime;
-int threshold = 10; //cambiar según valor de sensor capacitivo
+int threshold = 10; 
+int touchValue;//cambiar según valor de sensor capacitivo
 int ledbuilt = 13;
 bool touch1detected = false;
 int contador_conexion_wifi = 0;
