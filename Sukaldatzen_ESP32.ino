@@ -67,14 +67,14 @@ void FLASHvariables::initialize() {
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
-#define PIN_LED 35
-#define NUMPIXELS      7
+#define PIN_LED 35    //adafruit 17
+#define NUMPIXELS      6  //adafruit 6
 #define SENSOR_CAPACITIVO T0 //gpio4
 #define MOSFET_LED 22
 
 //Pines paara la comunicacion SPI con el MAX31855
 #define MAXDO   33
-#define MAXCS   15
+#define MAXCS   25
 #define MAXCLK  32
 #define MOSFET_MAX31855  26
 
@@ -84,7 +84,7 @@ void FLASHvariables::initialize() {
 #define NARANJA 0xFF8C00
 #define ROJO 0xFF0000
 #define APAGADO 0x000000
-#define SATURACION_COLOR 255
+#define SATURACION_COLOR 10
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, PIN_LED);
 RgbColor rojo(SATURACION_COLOR, 0, 0);
