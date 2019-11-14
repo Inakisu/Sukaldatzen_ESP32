@@ -67,14 +67,14 @@ void FLASHvariables::initialize() {
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
-#define PIN_LED 35    //adafruit 17
-#define NUMPIXELS      6  //adafruit 6
+#define PIN_LED 35
+#define NUMPIXELS      7
 #define SENSOR_CAPACITIVO T0 //gpio4
 #define MOSFET_LED 22
 
 //Pines paara la comunicacion SPI con el MAX31855
 #define MAXDO   33
-#define MAXCS   25
+#define MAXCS   15
 #define MAXCLK  32
 #define MOSFET_MAX31855  26
 
@@ -84,7 +84,7 @@ void FLASHvariables::initialize() {
 #define NARANJA 0xFF8C00
 #define ROJO 0xFF0000
 #define APAGADO 0x000000
-#define SATURACION_COLOR 10
+#define SATURACION_COLOR 255
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, PIN_LED);
 RgbColor rojo(SATURACION_COLOR, 0, 0);
@@ -344,15 +344,9 @@ esp_sleep_wakeup_cause_t get_wakeup_reason() {
 
 void loop() {
   Serial.println("-- Entramos en el bucle de lectura de temperaturas");
-  obtenerNTP(); //ESTO ES PARA PROBAR
-   //PRUEBA
-  //actualizarBD(1);
- // actualizarBD(2);
-//  actualizarBD(3);
   deteccionSensorCapacitivo();
   leerTemperatura();
     actualizarBD(2);
-  //actualizarBD();
   t1 = millis();
   if (temp_olla >= 141) {
     temp_maxima = true;
@@ -568,12 +562,9 @@ void obtenerNTP() {
   }
   formattedDate = timeClient.getFormattedDate();
   int splitT = formattedDate.indexOf("T"); //Partimos la fecha y la hora
-  dayStamp = formattedDate.substring(0, splitT);
-  //Serial.println(dayStamp); //obtenemos la fecha
-  timeStamp = formattedDate.substring(splitT + 1, formattedDate.length() - 1);
-  //timeStamp.remove(16);
-  //Serial.println(timeStamp);//obtenemos la hora
-  //Ahora nos queda juntar las dos con un espacio
+  dayStamp = formattedDate.substring(0, splitT); //fecha
+  timeStamp = formattedDate.substring(splitT + 1, formattedDate.length() - 1); //hora
+  //Ahora nos queda juntar las dos con un espacio (fecha y hora)
   dateTimeStamp = dayStamp + " " + timeStamp;
   Serial.println("dateTimeStamp obtenida en obtenertNTP(): " + dateTimeStamp);
 }
@@ -589,7 +580,7 @@ void actualizarBD(int tipo) {
   //Creamos objeto JSON a enviar
   const int capacity = JSON_OBJECT_SIZE(12);
   StaticJsonBuffer<capacity> jb;
-  obtenerNTP();
+  obtenerNTP(); //obtenemos la hora desde internet
   if(tipo == 1){
     dateTimeStampInicio = dateTimeStamp;
     medicFFin = (char*)0; //null
