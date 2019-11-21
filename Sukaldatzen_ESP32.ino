@@ -70,14 +70,14 @@ void FLASHvariables::initialize() {
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
 #define PIN_LED 35              // adafruit 17
 #define NUMPIXELS      6        //adafruit 7
-#define SENSOR_CAPACITIVO T0    //gpio4
+#define SENSOR_CAPACITIVO 26 //gpio26 //A0 //<----- ahora | antes -----> //T0    //gpio4
 #define MOSFET_LED 22
 
 //Pines paara la comunicacion SPI con el MAX31855  //ADAFRUIT
 #define MAXDO   32                                  //33
 #define MAXCS   25                                  //15
 #define MAXCLK  33                                  //32
-#define MOSFET_MAX31855  26
+#define MOSFET_MAX31855  24//26
 
 ////////////////////////Variables LED//////////////////////////////
 /*#define AZUL 0x0000F0
@@ -112,11 +112,11 @@ esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info
 
 /////////////////////Variables//////////////////////////////
 //Valores fijos del circuito
-float rAux = 991.0;  //Raux corresponde al valor de la resistencia auxiliar.
+float rAux = 50000.0;  //Raux corresponde al valor de la resistencia auxiliar.
 float vcc = 3.3;       //Vcc es la tensión de alimentación del circuito potenciométrico.
 float beta = 3950.0;    //Beta es la constante característica de la NTC.
 float temp0 = 298.0;
-float r0 = 1000.0;     //r0 es la resistencia de la NTC a la temperatura 0
+float r0 = 50000.0;     //r0 es la resistencia de la NTC a la temperatura 0
 
 //Variables usadas en el cálculo
 float vm = 0.0;
@@ -464,15 +464,15 @@ void deteccionSensorCapacitivo() {
         }
       }
     }
+    
     if (touchRead(SENSOR_CAPACITIVO) > threshold) {
       touch1detected = false;
-
     } else {
       touch1detected = true;
       Serial.println("apagando");
       contador_sensor_capacitivo++;
     }
-
+    
     if (contador_sensor_capacitivo == 15) {
       establecer_color_led(apagado);
       apagar = true;
@@ -487,7 +487,6 @@ void deteccionSensorCapacitivo() {
     touchAttachInterrupt(SENSOR_CAPACITIVO, callback, threshold);
     esp_sleep_enable_touchpad_wakeup();
     esp_deep_sleep_start();
-
     colores_led();
   } else {
 
@@ -497,22 +496,23 @@ void deteccionSensorCapacitivo() {
   apagar = false;
 }
 
-////////////////////////////////////////Leer temperatura del termopar//////////////////////////////////
+/////////////////////////////Leer temperatura del termopar////////////////////////////
 
 void leerTemperatura() {
 //Bloque de cálculo
-  vm=(vcc / 1024)*( analogRead(0) );                //Calcular tensión en la entrada
+  vm=(vcc / 1024)*( analogRead(34) );                //Calcular tensión en la entrada
   rntc = rAux / ((vcc/vm)-1);                       //Calcular la resistencia de la NTC
   temperaturaK = beta/(log(rntc/r0)+(beta/temp0));  //Calcular la temperatura en Kelvin
-
   //Restar 273 para pasar a grados celsus
-  //Serial.println(temperaturaK - 273);
+  Serial.println(temperaturaK);
+  temperaturaK = temperaturaK - 273;
+  Serial.println(temperaturaK);
   
 //  digitalWrite(MOSFET_MAX31855, HIGH);
 //  double t = millis();
 //  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
-  temp_olla = temperaturaK - 273;//thermocouple.readCelsius(); //termopar
-  temp_tapa = thermocouple.readInternal(); //interna del ic max
+  temp_olla = temperaturaK;//thermocouple.readCelsius(); //termopar
+  temp_tapa = 20;//thermocouple.readInternal(); //interna del ic max
   //digitalWrite(MOSFET_MAX31855, LOW);
 }
 
