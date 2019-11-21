@@ -11,6 +11,7 @@
 #include <base64.h>
 #include <ArduinoJson.h>
 #include <NTPClient.h>
+#include <math.h>
 
 ///////////////////////////////UUID Bluetooth///////////////////////////
 
@@ -110,6 +111,17 @@ template<class T> inline Print &operator <<(Print &obj, T arg) {
 esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info_t to access data on chip hardware
 
 /////////////////////Variables//////////////////////////////
+//Valores fijos del circuito
+float rAux = 991.0;  //Raux corresponde al valor de la resistencia auxiliar.
+float vcc = 4.96;       //Vcc es la tensión de alimentación del circuito potenciométrico.
+float beta = 3950.0;    //Beta es la constante característica de la NTC.
+float temp0 = 298.0;
+float r0 = 1000.0;     //r0 es la resistencia de la NTC a la temperatura 0
+
+//Variables usadas en el cálculo
+float vm = 0.0;
+float rntc = 0.0;
+float temperaturaK = 0.0;
 
 uint32_t prevTime;
 int threshold = 10; //cambiar según valor de sensor capacitivo
@@ -264,6 +276,7 @@ void setup() {
   t1 = millis();
   esp_chip_info(&chip_info);
   Serial.begin(115200);
+  //analogReference(EXTERNAL);
   strip.Begin();
   //strip.setBrightness(40); // 1/3 brightness
   prevTime = millis();
@@ -487,12 +500,20 @@ void deteccionSensorCapacitivo() {
 ////////////////////////////////////////Leer temperatura del termopar//////////////////////////////////
 
 void leerTemperatura() {
-  digitalWrite(MOSFET_MAX31855, HIGH);
-  double t = millis();
-  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
-  temp_olla = thermocouple.readCelsius(); //termopar
+//Bloque de cálculo
+  vm=(vcc / 1024)*( analogRead(0) );                //Calcular tensión en la entrada
+  rntc = rAux / ((vcc/vm)-1);                       //Calcular la resistencia de la NTC
+  temperaturaK = beta/(log(rntc/r0)+(beta/temp0));  //Calcular la temperatura en Kelvin
+
+  //Restar 273 para pasar a grados celsus
+  //Serial.println(temperaturaK - 273);
+  
+//  digitalWrite(MOSFET_MAX31855, HIGH);
+//  double t = millis();
+//  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
+  temp_olla = temperaturaK - 273;//thermocouple.readCelsius(); //termopar
   temp_tapa = thermocouple.readInternal(); //interna del ic max
-  digitalWrite(MOSFET_MAX31855, LOW);
+  //digitalWrite(MOSFET_MAX31855, LOW);
 }
 
 //////////////////////////////////////Establecer color LED////////////////////////////////////////////
