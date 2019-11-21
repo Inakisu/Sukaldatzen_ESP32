@@ -111,7 +111,13 @@ esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info
 
 /////////////////////Variables//////////////////////////////
 
-
+//--------------Del NTC 50k--------------------
+double adcMax, Vs;
+double R1 = 50000.0; //10000.0;   // voltage divider resistor value
+double Beta = 3950.0;  // Beta value
+double To = 298.15;    // Temperature in Kelvin for 25 degree Celsius
+double Ro = 50000.0; //10000.0;  // Resistance of Thermistor at 25 degree Celsius
+//---------------------------------------------
 uint32_t prevTime;
 int threshold = 10; //cambiar según valor de sensor capacitivo
 int ledbuilt = 13;
@@ -271,6 +277,9 @@ void setup() {
   pinMode(MOSFET_MAX31855, OUTPUT);
   pinMode(MOSFET_LED, OUTPUT);
   digitalWrite(MOSFET_LED, HIGH);
+
+      adcMax = 4095.0;   // ADC resolution 10-bit (0-1023)
+      Vs = 3.3;         
 
   variablesFlash.get();
   //variablesFlash.initialize();
@@ -484,24 +493,18 @@ void deteccionSensorCapacitivo() {
   apagar = false;
 }
 
-/////////////////////////////Leer temperatura del termopar////////////////////////////
+/////////////////////////////Leer temperatura////////////////////////////
 
 void leerTemperatura() {
+//--------------------------ntc----
+  temperaturaNTC();
+//--------------------------ntc----
 
-  
-////Bloque de cálculo
-//  vm=(vcc / 1024)*( analogRead(34) );                //Calcular tensión en la entrada
-//  rntc = rAux / ((vcc/vm)-1);                       //Calcular la resistencia de la NTC
-//  temperaturaK = beta/(log(rntc/r0)+(beta/temp0));  //Calcular la temperatura en Kelvin
-//  //Restar 273 para pasar a grados celsus
-//  Serial.println(temperaturaK);
-//  temperaturaK = temperaturaK - 273;
-//  Serial.println(temperaturaK);
 //  
-////  digitalWrite(MOSFET_MAX31855, HIGH);
-////  double t = millis();
-////  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
-//  temp_olla = temperaturaK;//thermocouple.readCelsius(); //termopar
+//  digitalWrite(MOSFET_MAX31855, HIGH);
+//  double t = millis();
+//  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
+//  temp_olla = thermocouple.readCelsius(); //termopar
 //  temp_tapa = 20;//thermocouple.readInternal(); //interna del ic max
 //  //digitalWrite(MOSFET_MAX31855, LOW);
 //  digitalWrite(MOSFET_MAX31855, HIGH);
@@ -511,7 +514,22 @@ void leerTemperatura() {
 //  temp_tapa = thermocouple.readInternal(); //interna del ic max
 //  digitalWrite(MOSFET_MAX31855, LOW);
 }
+//-------ntc-------
+void temperaturaNTC(){
 
+  double Vout, Rt = 0;
+    double T, Tc, Tf = 0;
+  
+    Vout = analogRead(34) * Vs/adcMax; //Pin A2 del adafruit Feather es pin 34!!
+    Rt = R1 * Vout / (Vs - Vout);
+    T = 1/(1/To + log(Rt/Ro)/Beta);  // Temperature in Kelvin
+    Tc = T - 273.15;                 // Celsius
+    Tf = Tc * 9 / 5 + 32;            // Fahrenheit
+    Serial.println(Tc);
+    temp_olla = Tc;
+    temp_tapa=20;
+}
+//--------------------
 ///////////////////////////////Establecer color LED////////////////////////////////////
 void colores_led() {
 
