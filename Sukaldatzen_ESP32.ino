@@ -113,7 +113,7 @@ esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info
 /////////////////////Variables//////////////////////////////
 //Valores fijos del circuito
 float rAux = 991.0;  //Raux corresponde al valor de la resistencia auxiliar.
-float vcc = 4.96;       //Vcc es la tensión de alimentación del circuito potenciométrico.
+float vcc = 3.3;       //Vcc es la tensión de alimentación del circuito potenciométrico.
 float beta = 3950.0;    //Beta es la constante característica de la NTC.
 float temp0 = 298.0;
 float r0 = 1000.0;     //r0 es la resistencia de la NTC a la temperatura 0
