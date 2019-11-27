@@ -141,6 +141,7 @@ bool apagar = false;
 int mediciones = 0;
 RTC_DATA_ATTR int mediciones_temp = 0;
 String formattedDate;
+String epochTime;
 String dayStamp;
 String timeStamp;
 String dateTimeStamp;
@@ -514,6 +515,7 @@ void leerTemperatura() {
 //  temp_tapa = thermocouple.readInternal(); //interna del ic max
 //  digitalWrite(MOSFET_MAX31855, LOW);
 }
+
 //-------ntc-------
 void temperaturaNTC(){
 
@@ -530,6 +532,7 @@ void temperaturaNTC(){
     temp_tapa=20;
 }
 //--------------------
+
 ///////////////////////////////Establecer color LED////////////////////////////////////
 void colores_led() {
 
@@ -596,6 +599,7 @@ void obtenerNTP() {
     timeClient.forceUpdate();
   }
   formattedDate = timeClient.getFormattedDate();
+  epochTime = timeClient.getEpochTime(); //añadido tiempo en epoches
   int splitT = formattedDate.indexOf("T"); //Partimos la fecha y la hora
   dayStamp = formattedDate.substring(0, splitT); //fecha
   timeStamp = formattedDate.substring(splitT + 1, formattedDate.length() - 1); //hora
@@ -603,13 +607,14 @@ void obtenerNTP() {
   dateTimeStamp = dayStamp + " " + timeStamp;
   Serial.println("dateTimeStamp obtenida en obtenertNTP(): " + dateTimeStamp);
 }
-/////////////////////////////////////Actualización de la base de datos///////////////////////////////
+//////////////////////////////Actualización de la base de datos///////////////////////////////
 void actualizarBD(int tipo) {
   
   Serial.println("-- Entrando en actualizarBD() " + tipo);
   String authUsername = "android";
   String authPassword = "Becario2017";
   String medicFFin = " ";
+  String medDuraEpoch = " ";
   //codificamos en base64
   String auth = base64::encode(authUsername + ":" + authPassword);
   //Creamos objeto JSON a enviar
@@ -625,11 +630,13 @@ void actualizarBD(int tipo) {
   }
   if(tipo == 3){
     medicFFin = dateTimeStamp;
+    medDuraEpoch = medDuraEpoch;
   }
   JsonObject& json = jb.createObject(); //JsonObject& json = buffer.createObject(); //jsonBuffer
   json["idMac"] = WiFi.macAddress();
   json["medicionFechaInicio"] = dateTimeStampInicio;
   json["medicionFechaFin"] = medicFFin;
+  json["medicionDuracion"] = medDuraEpoch; //Duración de la cocción en epoches para repres. gráf. en Kibana
   json["timestamp"] = dateTimeStamp;
   json["tempsInt"] = temp_olla;//temp_olla;
   json["tempsTapa"] = temp_tapa;//temp_tapa;
@@ -638,7 +645,7 @@ void actualizarBD(int tipo) {
   Serial.println("");
   String payload=" ";
   json.printTo(payload);
-  Serial.println("========> La payload que se va a enviar: "  + payload);
+  Serial.println("========> El payload que se va a enviar: "  + payload);
   String payloadV = " ";
   HTTPClient http;
   http.begin("http://10.128.0.104:9200/mediciones_sukaldatzen/_doc");//separado por comas no compila
