@@ -146,6 +146,7 @@ String dayStamp;
 String timeStamp;
 String dateTimeStamp;
 String dateTimeStampInicio;
+String epochTimeStampInicio;
 //////////////////////////Strings para base de datos///////////////////////////////
 char buff[100];
 int varCor = 401;
@@ -552,7 +553,7 @@ void establecer_color_led(RgbColor color) {
   }
   strip.Show();
 }
-//////////////////////////Pasar numero a String////////////////////////////////////
+//////////////////////////Pasar numero a String///////////////////////////////
 void numero_medicion_string() {
   sprintf(buf_numero_medicion, "%s", "");
   if (mediciones >= 10) {
@@ -623,6 +624,7 @@ void actualizarBD(int tipo) {
   obtenerNTP(); //obtenemos la hora desde internet
   if(tipo == 1){
     dateTimeStampInicio = dateTimeStamp;
+    epochTimeStampInicio = epochTime;
     medicFFin = (char*)0; //null
   }
   if(tipo == 2){
@@ -630,7 +632,7 @@ void actualizarBD(int tipo) {
   }
   if(tipo == 3){
     medicFFin = dateTimeStamp;
-    medDuraEpoch = medDuraEpoch;
+    medDuraEpoch = String((epochTimeStampInicio.toInt() - epochTime.toInt())/60);
   }
   JsonObject& json = jb.createObject(); //JsonObject& json = buffer.createObject(); //jsonBuffer
   json["idMac"] = WiFi.macAddress();
