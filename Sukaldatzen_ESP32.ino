@@ -69,14 +69,14 @@ void FLASHvariables::initialize() {
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
 #define PIN_LED 17              // adafruit 17
 #define NUMPIXELS      6        //adafruit 7
-#define SENSOR_CAPACITIVO T0    //gpio4
+#define SENSOR_CAPACITIVO 26 //gpio26 //A0 //<----- ahora | antes -----> //T0    //gpio4
 #define MOSFET_LED 22
 
 //Pines paara la comunicacion SPI con el MAX31855  //ADAFRUIT
 #define MAXDO   32                                  //33
 #define MAXCS   25                                  //15
 #define MAXCLK  33                                  //32
-#define MOSFET_MAX31855  26
+#define MOSFET_MAX31855  24//26
 
 ////////////////////////Variables LED//////////////////////////////
 /*#define AZUL 0x0000F0
@@ -111,6 +111,13 @@ esp_chip_info_t chip_info; //Instantiate object chip_info of class esp_chip_info
 
 /////////////////////Variables//////////////////////////////
 
+//--------------Del NTC 50k--------------------
+double adcMax, Vs;
+double R1 = 50000.0; //10000.0;   // voltage divider resistor value
+double Beta = 3950.0;  // Beta value
+double To = 298.15;    // Temperature in Kelvin for 25 degree Celsius
+double Ro = 50000.0; //10000.0;  // Resistance of Thermistor at 25 degree Celsius
+//---------------------------------------------
 uint32_t prevTime;
 int threshold = 10; 
 int touchValue;//cambiar según valor de sensor capacitivo
@@ -271,6 +278,9 @@ void setup() {
   pinMode(MOSFET_MAX31855, OUTPUT);
   pinMode(MOSFET_LED, OUTPUT);
   digitalWrite(MOSFET_LED, HIGH);
+
+      adcMax = 4095.0;   // ADC resolution 10-bit (0-1023)
+      Vs = 3.3;         
 
   variablesFlash.get();
   //variablesFlash.initialize();
@@ -452,15 +462,15 @@ void deteccionSensorCapacitivo() {
         }
       }
     }
+    
     if (touchRead(SENSOR_CAPACITIVO) > threshold) {
       touch1detected = false;
-
     } else {
       touch1detected = true;
       Serial.println("apagando");
       contador_sensor_capacitivo++;
     }
-
+    
     if (contador_sensor_capacitivo == 15) {
       establecer_color_led(apagado);
       apagar = true;
@@ -475,7 +485,6 @@ void deteccionSensorCapacitivo() {
     touchAttachInterrupt(SENSOR_CAPACITIVO, callback, threshold);
     esp_sleep_enable_touchpad_wakeup();
     esp_deep_sleep_start();
-
     colores_led();
   } else {
 
@@ -485,18 +494,44 @@ void deteccionSensorCapacitivo() {
   apagar = false;
 }
 
-////////////////////////////////////////Leer temperatura del termopar//////////////////////////////////
+/////////////////////////////Leer temperatura////////////////////////////
 
 void leerTemperatura() {
-  digitalWrite(MOSFET_MAX31855, HIGH);
-  double t = millis();
-  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
-  temp_olla = thermocouple.readCelsius(); //termopar
-  temp_tapa = thermocouple.readInternal(); //interna del ic max
-  digitalWrite(MOSFET_MAX31855, LOW);
-}
+//--------------------------ntc----
+  temperaturaNTC();
+//--------------------------ntc----
 
-//////////////////////////////////////Establecer color LED////////////////////////////////////////////
+//  
+//  digitalWrite(MOSFET_MAX31855, HIGH);
+//  double t = millis();
+//  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
+//  temp_olla = thermocouple.readCelsius(); //termopar
+//  temp_tapa = 20;//thermocouple.readInternal(); //interna del ic max
+//  //digitalWrite(MOSFET_MAX31855, LOW);
+//  digitalWrite(MOSFET_MAX31855, HIGH);
+//  double t = millis();
+//  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
+//  temp_olla = thermocouple.readCelsius(); //termopar
+//  temp_tapa = thermocouple.readInternal(); //interna del ic max
+//  digitalWrite(MOSFET_MAX31855, LOW);
+}
+//-------ntc-------
+void temperaturaNTC(){
+
+  double Vout, Rt = 0;
+    double T, Tc, Tf = 0;
+  
+    Vout = analogRead(34) * Vs/adcMax; //Pin A2 del adafruit Feather es pin 34!!
+    Rt = R1 * Vout / (Vs - Vout);
+    T = 1/(1/To + log(Rt/Ro)/Beta);  // Temperature in Kelvin
+    Tc = T - 273.15;                 // Celsius
+    Tf = Tc * 9 / 5 + 32;            // Fahrenheit
+    Serial.println(Tc);
+    temp_olla = Tc;
+    temp_tapa=20;
+}
+//--------------------
+///////////////////////////////Establecer color LED////////////////////////////////////
 void colores_led() {
 
   if (temp_olla >= 0 && temp_olla < 100) {
