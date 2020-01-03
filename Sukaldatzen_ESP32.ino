@@ -2,8 +2,8 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <NeoPixelBus.h>
-#include <SPI.h>
-#include "Adafruit_MAX31855.h"
+//#include <SPI.h>
+//#include "Adafruit_MAX31855.h"
 #include <EEPROM.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -11,6 +11,7 @@
 #include <base64.h>
 #include <ArduinoJson.h>
 #include <NTPClient.h>
+#include <PID_v1.h>
 
 ///////////////////////////////UUID Bluetooth///////////////////////////
 
@@ -67,26 +68,19 @@ void FLASHvariables::initialize() {
 //#define WIFI_PASSWORD "Wifi-Embega-123456789"
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
-#define PIN_LED 17              // adafruit 17
+//#define PIN_LED 17              // adafruit 17
 #define NUMPIXELS      6        //adafruit 7
-#define SENSOR_CAPACITIVO 26 //gpio26 //A0 //<----- ahora | antes -----> //T0    //gpio4
-#define MOSFET_LED 22
+#define SENSOR_CAPACITIVO 4 //gpio26 //A0 //<----- ahora | antes -----> //T0    //gpio4
+#define SAFETY 13
+#define MOS_LEDS 16
+#define MOS_AO 27
+ 
+double Setpoint, input, Output;
+PID myPID(&input, &Output, &Setpoint,5,0.2,0.5, DIRECT);
 
-//Pines paara la comunicacion SPI con el MAX31855  //ADAFRUIT
-#define MAXDO   32                                  //33
-#define MAXCS   25                                  //15
-#define MAXCLK  33                                  //32
-#define MOSFET_MAX31855  24//26
-
-////////////////////////Variables LED//////////////////////////////
-/*#define AZUL 0x0000F0
-#define VERDE 0x00FF00
-#define NARANJA 0xFF8C00
-#define ROJO 0xFF0000
-#define APAGADO 0x000000*/
 #define SATURACION_COLOR 255
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, PIN_LED);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, MOS_LEDS);
 RgbColor rojo(SATURACION_COLOR, 0, 0);
 RgbColor verde(0, SATURACION_COLOR, 0);
 RgbColor azul(0, 0, SATURACION_COLOR);
@@ -101,7 +95,7 @@ HslColor hslWhite(blanco);
 HslColor hslBlack(apagado);
 
 /////////////////////////Termopar, WIFI, memoria Flash//////////////////////////////
-Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
+//Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
 WiFiServer server(80);
 template<class T> inline Print &operator <<(Print &obj, T arg) {
   obj.print(arg);
@@ -117,6 +111,19 @@ double R1 = 50000.0; //10000.0;   // voltage divider resistor value
 double Beta = 3950.0;  // Beta value
 double To = 298.15;    // Temperature in Kelvin for 25 degree Celsius
 double Ro = 50000.0; //10000.0;  // Resistance of Thermistor at 25 degree Celsius
+//--------------Del PT100--------------------
+float Y1= 26; //9.35°C puntos de calibracion
+float X1=131; //adc
+float Y2=111.6; //10 °C
+float X2=1424; //adc
+int I;
+int ADC;
+float acum;
+float m;
+float c;
+float temp,te;
+
+
 //---------------------------------------------
 uint32_t prevTime;
 int threshold = 10; 
@@ -275,9 +282,22 @@ void setup() {
   strip.Begin();
   //strip.setBrightness(40); // 1/3 brightness
   prevTime = millis();
-  pinMode(MOSFET_MAX31855, OUTPUT);
-  pinMode(MOSFET_LED, OUTPUT);
-  digitalWrite(MOSFET_LED, HIGH);
+  /////////////30_12_2019////////////////////////INICIO
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
+  adcStart(34);
+   //NUMERO DE CICLOS POR MUESTRA
+  analogSetCycles(8);
+  //NUMERO DE MUESTRAS DENTRO DE UN RANGO
+  analogSetSamples(1);
+    pinMode (SAFETY,OUTPUT);
+    digitalWrite (SAFETY,1);
+    pinMode (MOS_LEDS,OUTPUT);
+    digitalWrite (MOS_LEDS,1);
+    pinMode (MOS_AO,OUTPUT);
+    digitalWrite (MOS_AO,1);
+    myPID.SetMode(AUTOMATIC);
+  /////////////30_12_2019////////////////////////FINAL
 
       adcMax = 4095.0;   // ADC resolution 10-bit (0-1023)
       Vs = 3.3;         
@@ -515,6 +535,86 @@ void leerTemperatura() {
 //  temp_tapa = thermocouple.readInternal(); //interna del ic max
 //  digitalWrite(MOSFET_MAX31855, LOW);
 }
+//------------PT100--------------
+void temperaturaPT100(){
+//muestreo de señal analogica
+for (i=0;i<10000;i++)
+{
+ADC = analogRead(34);
+acum=acum+(float)ADC;
+}
+acum=acum/10000;
+
+//calculo de temperatura por funcion lineal
+// y=m * b + c
+// donde m es la pendiente
+// y - b son los puntos
+//c es la constante
+
+m=pendiente(Y1,X1,Y2,X2);
+c=constante(m,Y1,X1);
+temp=obt_temp(m,c,acum);
+Serial.print("TEMPERATURA: ");
+Serial.println(temp);
+Setpoint=obt_adc(m,c,18);
+input = acum;
+myPID.Compute();
+
+Serial.print("SP:");
+Serial.println(obt_temp(m,c,Setpoint));
+
+//este es para debug se puede sacar
+
+Serial.print("rtd e :");
+Serial.println(ADC);
+Serial.print("setpoint");
+Serial.println(Setpoint);
+Serial.print("ADC ");
+Serial.println(ADC);
+if (Output>0)
+{
+Serial.println(" OUT:ON ");
+}
+else
+{
+Serial.println(" OUT:OFF");
+}
+delay(500);}
+
+//funcion pendiente con respecto a dos puntos se acuerdan de las matematicas
+// y te preguntabas para que fuck servia esto jejeje
+
+float pendiente(float Y1,float X1,float Y2, float X2)
+{
+m=0;
+float m=(Y2-Y1)/(X2-X1);
+return m;
+}
+//la constante la obtengo despejando
+float constante(float m,float Y1,float X1)
+{
+c=0;
+float c=Y1-(m*X1);
+return c;
+}
+
+//esta es la funcion lineal
+
+float obt_temp(float m,float c,float X1)
+{
+float Y1=(m*X1)+c;
+return Y1;
+}
+
+//esta es una funcion inversa le damos la temp y nos devuelve el ADC para el PiD
+
+float obt_adc(float m,float c,float Y1)
+{
+float X1=(Y1 - c)/m;
+return X1;
+}
+
+//------pt100-------------
 //-------ntc-------
 void temperaturaNTC(){
 
@@ -615,7 +715,10 @@ void actualizarBD(int tipo) {
   String auth = base64::encode(authUsername + ":" + authPassword);
   //Creamos objeto JSON a enviar
   const int capacity = JSON_OBJECT_SIZE(12);
+  ////////////arduino json 5
   StaticJsonBuffer<capacity> jb;
+  //////////arduino json 6
+  //StaticJsonDocument<capacity> doc;
   obtenerNTP(); //obtenemos la hora desde internet
   if(tipo == 1){
     dateTimeStampInicio = dateTimeStamp;
