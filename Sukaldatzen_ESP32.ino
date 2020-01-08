@@ -69,7 +69,7 @@ void FLASHvariables::initialize() {
 
 //////////////////////Informacion LED y pin Sensor capacitivo//////////////////
 //#define PIN_LED 17              // adafruit 17
-#define NUMPIXELS      6        //adafruit 7
+#define PixelCount      6        //adafruit 7
 #define SENSOR_CAPACITIVO 4 //gpio26 //A0 //<----- ahora | antes -----> //T0    //gpio4
 #define SAFETY 13
 #define MOS_LEDS 16
@@ -80,7 +80,7 @@ PID myPID(&input, &Output, &Setpoint,5,0.2,0.5, DIRECT);
 
 #define SATURACION_COLOR 255
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, MOS_LEDS);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, MOS_LEDS);
 RgbColor rojo(SATURACION_COLOR, 0, 0);
 RgbColor verde(0, SATURACION_COLOR, 0);
 RgbColor azul(0, 0, SATURACION_COLOR);
