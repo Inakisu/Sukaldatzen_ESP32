@@ -522,11 +522,6 @@ void leerTemperatura() {
 //--------------------------ntc----
   temperaturaNTC();
 
-//  //digitalWrite(MOSFET_MAX31855, LOW);
-//  digitalWrite(MOSFET_MAX31855, HIGH);
-//  double t = millis();
-//  while (millis() - t < 100); //tiempo de espera de 5 ms para dar tiempo a activar el mosfet
-//  temp_olla = thermocouple.readCelsius(); //termopar
 //------------PT100--------------
 void temperaturaPT100(){
 //muestreo de señal analogica
