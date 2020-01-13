@@ -645,7 +645,7 @@ void colores_led() {
 
 void establecer_color_led(RgbColor color) {
 
-  for (int i = 0; i < NUMPIXELS; i++) {
+  for (int i = 0; i < PixelCount; i++) {
     strip.SetPixelColor(i, color);
   }
   strip.Show();
